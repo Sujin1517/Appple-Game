@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>젊을수록 유리한 사과 게임</title>
+    <title>사과 게임</title>
 </head>
 <body>
     <canvas id="canvas" width="100%" height="100%" style="border: 1px solid black;"></canvas>
 </body>
 <script>
-const w = 800;
+    const w = 800;
 const h = 480;
+const TimeLimit = 1000; // 1 per 0.1 second
+const appleColor = "#f00"; // #4c4
+const updateTime = 20;
 let state = 0;
 let timer = 0;
 let score = 0;
@@ -32,6 +35,12 @@ let appleList = [
 
 
 window.onload = () => {
+    // if (!window.opener) {
+    //     window.open("./apple.html", "_blank","width=798, height=476, popup=1, menubar=0, resizeable=0, scrollbars=0, status=0, toolbar=0");
+    // }
+    // self.statusbar = false;
+    // window.resizeTo(798, 476);
+
     canvas = document.getElementById("canvas");
     canvas.setAttribute("width", w);
     canvas.setAttribute("height", h);
@@ -40,14 +49,18 @@ window.onload = () => {
 
 
     canvas.addEventListener("mousedown", e => {
-        mouseDownPos.x = e.offsetX;
-        mouseDownPos.y = e.offsetY;
         console.log(e.offsetX, e.offsetY);
+        if(state == 1) {
+            mouseDownPos.x = e.offsetX;
+            mouseDownPos.y = e.offsetY;
+        }
     });
     canvas.addEventListener("mouseup", e => {
-        mouseUpPos.x = e.offsetX;
-        mouseUpPos.y = e.offsetY;
-        checkApple();
+        if(state == 1) {
+            mouseUpPos.x = e.offsetX;
+            mouseUpPos.y = e.offsetY;
+            checkApple();
+        }
     });
     canvas.addEventListener("mouseout", e => {
         mouseDownPos.x = -1;
@@ -71,7 +84,7 @@ window.onload = () => {
 
 const gameInitAndStart = () => {
     console.log("Log: start game");
-    timer = 100;
+    timer = TimeLimit;
     score = 0;
     for(let y=0; y<10; y++) {
         for(let x=0; x<17; x++) {
@@ -85,7 +98,7 @@ const gameInitAndStart = () => {
 const setTimer = () => {
     timer--;
     if(timer > 0) {
-        setTimeout(setTimer, 1000);
+        setTimeout(setTimer, 100);
     } else {
         state = 2;
         gameEnd();
@@ -112,7 +125,7 @@ const drawApple = (x,y) => {
     c.quadraticCurveTo(x-15,y+3,x-8,y-5);
     c.quadraticCurveTo(x-3,y-7,x,y);
 
-    c.fillStyle = "#4c4";
+    c.fillStyle = appleColor;
     c.strokeStyle = "#000";
     c.fill();
     c.stroke();
@@ -139,7 +152,7 @@ const drawApple = (x,y) => {
 const drawGameTimer = () => {
     c.beginPath();
     c.fillStyle = "#2b2";
-    c.fillRect(700, 75+(300/100*(100-timer)), 20, (300/100*timer)) // (305/100*timer);
+    c.fillRect(700, 75+(300/1000*(1000-timer)), 20, (300/1000*timer)) // (305/100*timer);
     c.closePath();
     c.beginPath();
     c.fillStyle = "#000";
@@ -148,6 +161,24 @@ const drawGameTimer = () => {
     c.closePath();
 }
 const drawGameBoard = () => {
+    c.fillStyle = "#ff0"
+    c.globalAlpha = 0.3;
+    c.fillRect(0,0,w,h);
+
+    c.globalAlpha = 0.6;
+    c.fillStyle = "#fff";
+    for(let y=0; y<14; y++) {
+        for(let x=0; x<21; x++){
+            c.beginPath();
+            c.arc(x*40+timer%40, y*40+timer%40-40, 10, 0, 2*Math.PI);
+            c.fill();
+            c.closePath();
+        }
+    }
+    c.globalAlpha = 1;
+
+
+
     for(let y=0; y<10 ; y++) {
         for(let x=0; x<17; x++){
             drawApple(130+x*32, 90+y*32);
@@ -215,11 +246,13 @@ const checkApple = () => {
     }
     console.log(appleSum);
     if(appleSum == 10) {
-        score += 2;
         for(let y=0; y<10 ; y++) {
             for(let x=0; x<17; x++){
-                if(130+x*32 > mx && 130+x*32 < mx+mdx && 93+y*32 > my && 93+y*32 < my+mdy) {
-                    appleList[y][x] = 0;
+                if (appleList[y][x] != 0){
+                    if(130+x*32 > mx && 130+x*32 < mx+mdx && 93+y*32 > my && 93+y*32 < my+mdy) {
+                        appleList[y][x] = 0;
+                        score++;
+                    }
                 }
             }
         }
@@ -232,12 +265,12 @@ const updateGame = () => {
     clearCanvas();
     drawGameBoard();
     if(mouseDownPos.x != -1) drawDrag();
-    if (state = 1) setTimeout(updateGame, 50);
+    if (state == 1) setTimeout(updateGame, updateTime);
 }
 
 
 const gameEnd = () => {
-
+    alert("게임 끝!\nScore : " + score);
 }
 </script>
 </html>
